@@ -1,0 +1,1393 @@
+
+Index · HTML
+Copy
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Risk Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ─── Design tokens ─────────────────────────────────────────── */
+:root {
+  --bg:          #0d1117;
+  --surface:     #161b22;
+  --surface2:    #1c2430;
+  --border:      #30363d;
+  --border-glow: #1e88e5;
+  --text:        #e6edf3;
+  --muted:       #8b949e;
+  --accent:      #1e88e5;
+  --accent-glow: rgba(30,136,229,.25);
+  --green:       #3fb950;
+  --amber:       #f59e0b;
+  --red:         #ef4444;
+  --mono:        'Space Mono', monospace;
+  --sans:        'DM Sans', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── Animated grid background ──────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(30,136,229,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30,136,229,.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: gridPan 60s linear infinite;
+  pointer-events: none;
+}
+@keyframes gridPan { to { background-position: 40px 40px; } }
+
+/* ─── Layout ─────────────────────────────────────────────────── */
+.app-wrapper {
+  position: relative; z-index: 1;
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  grid-template-rows: 60px 1fr;
+  min-height: 100vh;
+}
+
+/* ─── Header ─────────────────────────────────────────────────── */
+header {
+  grid-column: 1 / -1;
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 28px;
+  background: rgba(22,27,34,.9);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+
+.logo-mark {
+  width: 32px; height: 32px;
+  background: var(--accent);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  animation: pulse-logo 3s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes pulse-logo {
+  0%,100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+  50%      { box-shadow: 0 0 14px 4px var(--accent-glow); }
+}
+
+header h1 {
+  font-family: var(--mono);
+  font-size: 15px;
+  letter-spacing: .08em;
+  color: var(--text);
+}
+
+.tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: var(--accent);
+  background: var(--accent-glow);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 2px 7px;
+  text-transform: uppercase;
+}
+
+.header-status {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 11px; color: var(--muted);
+}
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: blink 2s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ─── Sidebar ─────────────────────────────────────────────────── */
+aside {
+  background: rgba(22,27,34,.75);
+  backdrop-filter: blur(8px);
+  border-right: 1px solid var(--border);
+  padding: 24px 20px;
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: 20px;
+}
+
+.panel {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.panel-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.panel-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px; height: 12px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+label {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  margin-top: 12px;
+  letter-spacing: .04em;
+}
+label:first-child { margin-top: 0; }
+
+input, select {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 8px 10px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+input:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+select option { background: var(--surface2); }
+
+.input-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+
+/* Simulation cards */
+.sim-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+
+.sim-card {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 10px 8px;
+  cursor: pointer;
+  transition: all .2s;
+  background: var(--bg);
+  text-align: center;
+  user-select: none;
+}
+.sim-card input[type=checkbox] {
+  position: absolute; opacity: 0; width: 0; height: 0;
+}
+.sim-card:hover { border-color: var(--accent); background: var(--accent-glow); }
+.sim-card.checked {
+  border-color: var(--accent);
+  background: rgba(30,136,229,.15);
+  box-shadow: 0 0 10px rgba(30,136,229,.2);
+}
+.sim-card .sim-icon { font-size: 20px; margin-bottom: 4px; }
+.sim-card .sim-name {
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--muted);
+  line-height: 1.3;
+}
+.sim-card.checked .sim-name { color: var(--text); }
+
+/* Run button */
+.btn-run {
+  width: 100%;
+  padding: 12px;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: .06em;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+  overflow: hidden;
+}
+.btn-run::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg,rgba(255,255,255,.15),transparent);
+  opacity: 0;
+  transition: opacity .2s;
+}
+.btn-run:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(30,136,229,.5); }
+.btn-run:hover::after { opacity: 1; }
+.btn-run:active { transform: translateY(0); }
+.btn-run:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ─── Main panel ─────────────────────────────────────────────── */
+main {
+  padding: 28px;
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: 24px;
+}
+
+/* Empty state */
+.empty-state {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px;
+  opacity: .5;
+  text-align: center;
+  padding: 60px 20px;
+}
+.empty-state .empty-icon { font-size: 64px; filter: grayscale(1); }
+.empty-state h2 { font-family: var(--mono); font-size: 16px; color: var(--muted); }
+.empty-state p  { font-size: 13px; color: var(--muted); max-width: 340px; }
+
+/* Loading spinner */
+.loading-overlay {
+  display: none;
+  flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; padding: 60px;
+  text-align: center;
+}
+.spinner {
+  width: 48px; height: 48px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text {
+  font-family: var(--mono); font-size: 12px; color: var(--muted);
+  animation: loadFade 1.5s ease-in-out infinite;
+}
+@keyframes loadFade { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+/* Result cards */
+.results-container {
+  display: flex; flex-direction: column; gap: 24px;
+  animation: fadeUp .4s ease both;
+}
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.result-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.result-header {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+
+.result-title {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: .04em;
+  color: var(--text);
+}
+
+.headline-var {
+  margin-left: auto;
+  text-align: right;
+}
+.headline-var .amount {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--amber);
+  text-shadow: 0 0 20px rgba(245,158,11,.4);
+}
+.headline-var .label {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.result-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+.result-chart {
+  padding: 16px;
+  border-right: 1px solid var(--border);
+}
+.result-chart img {
+  width: 100%; border-radius: 6px; display: block;
+}
+
+.result-table-wrap {
+  padding: 16px;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+thead tr { border-bottom: 1px solid var(--border); }
+th {
+  text-align: left;
+  padding: 6px 10px;
+  color: var(--muted);
+  font-weight: 400;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+td {
+  padding: 8px 10px;
+  color: var(--text);
+  border-bottom: 1px solid rgba(48,54,61,.5);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(30,136,229,.05); }
+
+/* Error state */
+.error-card {
+  background: rgba(239,68,68,.1);
+  border: 1px solid rgba(239,68,68,.4);
+  border-radius: 8px;
+  padding: 16px 20px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: #fca5a5;
+}
+.error-card strong { color: var(--red); display: block; margin-bottom: 6px; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ─── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .app-wrapper { grid-template-columns: 1fr; grid-template-rows: auto; }
+  aside { border-right: none; border-bottom: 1px solid var(--border); }
+  .result-body { grid-template-columns: 1fr; }
+  .result-chart { border-right: none; border-bottom: 1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+
+<div class="app-wrapper">
+
+  <!-- ─── Header ─────────────────────────────────────── -->
+  <header>
+    <div class="logo-mark"></div>
+    <h1>MARKET RISK ENGINE</h1>
+    <span class="tag">v1.0</span>
+    <div class="header-status">
+      <div class="status-dot"></div>
+      <span id="statusText">READY</span>
+    </div>
+  </header>
+
+  <!-- ─── Sidebar ────────────────────────────────────── -->
+  <aside>
+
+    <!-- Portfolio -->
+    <div class="panel">
+      <div class="panel-title">Portfolio</div>
+
+      <label>Tickers (comma-separated)</label>
+      <input id="tickers" type="text" value="NVDA,AAPL,MSFT,GOOGL,JPM"
+             placeholder="AAPL, MSFT, NVDA …">
+
+      <label>Weights (comma-separated, must sum to 1)</label>
+      <input id="weights" type="text" value="0.25,0.20,0.20,0.15,0.20"
+             placeholder="0.25, 0.30, 0.45 …">
+
+      <label>Portfolio Value (USD)</label>
+      <input id="portfolio_value" type="number" value="1000000" step="100000" min="1000">
+    </div>
+
+    <!-- Parameters -->
+    <div class="panel">
+      <div class="panel-title">MC Parameters</div>
+
+      <label>Confidence Level</label>
+      <select id="confidence">
+        <option value="0.90">90%</option>
+        <option value="0.95" selected>95%</option>
+        <option value="0.975">97.5%</option>
+        <option value="0.99">99%</option>
+        <option value="0.995">99.5%</option>
+        <option value="0.999">99.9%</option>
+      </select>
+
+      <label>Horizon (trading days)</label>
+      <input id="horizon" type="number" value="252" min="1" max="504"
+            placeholder="252 = 1 year">
+
+      <label>MC Simulations</label>
+      <input id="n_sims" type="number" value="200000" min="1000" step="10000">
+
+      <div class="input-row">
+        <div>
+          <label>Returns From</label>
+          <input id="start_year" type="number" value="2019" min="2000" max="2030">
+        </div>
+        <div>
+          <label>Returns To</label>
+          <input id="end_year" type="number" value="2024" min="2000" max="2030">
+        </div>
+      </div>
+
+      <p style="font-size:10px; color:var(--muted); margin-top:10px; line-height:1.5">
+        Start/End year sets the historical window used to estimate μ and σ for the MC simulation.
+        Horizon sets how many trading days forward to simulate.
+      </p>
+    </div>
+
+    <!-- Historical VaR Parameters (only shows when historical var selected) -->
+    <div class="panel" id="historicalVarPanel" style="display: none;">
+      <div class="panel-title">Historical VaR Parameters</div>
+
+      <label>History Window</label>
+      <select id="hist_var_preset">
+        <option value="custom">Custom</option>
+        <option value="1y">1 Year</option>
+        <option value="2y">2 Years</option>
+        <option value="3y" selected>3 Years</option>
+        <option value="5y">5 Years</option>
+        <option value="10y">10 Years</option>
+      </select>
+
+      <div class="input-row" style="margin-top: 10px;">
+        <div>
+          <label>From Date</label>
+          <input id="hist_var_start" type="date" value="2019-01-01">
+        </div>
+        <div>
+          <label>To Date</label>
+          <input id="hist_var_end" type="date" value="2024-12-31">
+        </div>
+      </div>
+
+      <p style="font-size:10px; color:var(--muted); margin-top:10px; line-height:1.5">
+        Sets the historical return window used to build the empirical distribution.
+        Longer windows give more observations; shorter windows reflect recent volatility.
+      </p>
+    </div>
+
+    <!-- Stress Test Parameters (only shows when stress test selected) -->
+    <div class="panel" id="stressTestPanel" style="display: none;">
+      <div class="panel-title">Stress Test Parameters</div>
+
+      <!-- Panel content switches based on which stress test is selected -->
+      <div id="pureStressContent" style="display: none;">
+        <label>Scenario Presets (optional)</label>
+        <select id="stress_scenario_pure">
+          <option value="custom">Custom</option>
+          <option value="covid_crash">COVID-19 Crash (Mar 2020)</option>
+          <option value="tech_selloff_2022">Tech Selloff 2022</option>
+          <option value="bank_crisis_2023">Banking Crisis (Mar 2023)</option>
+          <option value="market_correction">Market Correction (-15%)</option>
+        </select>
+
+        <label>Ticker Shocks</label>
+        <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+          <div style="display: grid; grid-template-columns: 1fr 100px 30px; gap: 8px; margin-bottom: 8px; font-size: 10px; color: var(--muted); text-transform: uppercase;">
+            <div>Ticker</div>
+            <div>Shock (%)</div>
+            <div></div>
+          </div>
+          <div id="pureShocksContainer">
+            <div class="pure-shock-row" style="display: grid; grid-template-columns: 1fr 100px 30px; gap: 8px; margin-bottom: 6px;">
+              <input type="text" placeholder="e.g., NVDA" style="font-size: 11px; padding: 6px 8px;">
+              <input type="number" placeholder="-25" step="1" style="font-size: 11px; padding: 6px 8px;">
+              <button onclick="removePureRow(this)" style="background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; border-radius: 4px; font-size: 12px; padding: 0;">×</button>
+            </div>
+          </div>
+          <button onclick="addPureRow()" style="width: 100%; padding: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; color: var(--accent); font-size: 11px; cursor: pointer; margin-top: 6px;">+ Add Ticker</button>
+        </div>
+
+        <label>Default Shock (% for unlisted stocks)</label>
+        <input id="default_shock" type="number" value="-15" step="1" min="-100" max="100">
+
+        <p style="font-size:10px; color:var(--muted); margin-top:8px; line-height:1.5">
+          Portfolio stocks not listed above will use the default shock. Current prices are auto-fetched.
+        </p>
+      </div>
+
+      <!-- Factor Stress Test Content -->
+      <div id="factorStressContent" style="display: none;">
+        <label>Scenario Presets (optional)</label>
+        <select id="stress_scenario_factor">
+          <option value="custom">Custom</option>
+          <option value="covid_crash">COVID-19 Crash (Mar 2020)</option>
+          <option value="growth_selloff">Growth/Tech Selloff</option>
+          <option value="rates_spike">Rates Spike</option>
+          <option value="volatility_shock">Volatility Shock</option>
+        </select>
+
+        <label>Beta Estimation Period</label>
+        <div class="input-row">
+          <div>
+            <label>From Year</label>
+            <input id="beta_start_year" type="number" value="2021" min="2000" max="2030">
+          </div>
+          <div>
+            <label>To Year</label>
+            <input id="beta_end_year" type="number" value="2024" min="2000" max="2030">
+          </div>
+        </div>
+
+        <label>Factor Shocks</label>
+        <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+          <div style="display: grid; grid-template-columns: 120px 80px 100px 30px; gap: 8px; margin-bottom: 8px; font-size: 10px; color: var(--muted); text-transform: uppercase;">
+            <div>Factor Name</div>
+            <div>Proxy</div>
+            <div>Shock (%)</div>
+            <div></div>
+          </div>
+          <div id="factorShocksContainer">
+            <!-- Default factors -->
+            <div class="factor-shock-row" style="display: grid; grid-template-columns: 120px 80px 100px 30px; gap: 8px; margin-bottom: 6px;">
+              <input type="text" value="MKT" placeholder="e.g., MKT" style="font-size: 11px; padding: 6px 8px;">
+              <input type="text" value="SPY" placeholder="SPY" style="font-size: 11px; padding: 6px 8px;">
+              <input type="number" placeholder="-20" step="1" style="font-size: 11px; padding: 6px 8px;">
+              <button onclick="removeFactorRow(this)" style="background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; border-radius: 4px; font-size: 12px; padding: 0;">×</button>
+            </div>
+            <div class="factor-shock-row" style="display: grid; grid-template-columns: 120px 80px 100px 30px; gap: 8px; margin-bottom: 6px;">
+              <input type="text" value="SEMI" placeholder="e.g., SEMI" style="font-size: 11px; padding: 6px 8px;">
+              <input type="text" value="SMH" placeholder="SMH" style="font-size: 11px; padding: 6px 8px;">
+              <input type="number" placeholder="-25" step="1" style="font-size: 11px; padding: 6px 8px;">
+              <button onclick="removeFactorRow(this)" style="background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; border-radius: 4px; font-size: 12px; padding: 0;">×</button>
+            </div>
+          </div>
+          <button onclick="addFactorRow()" style="width: 100%; padding: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; color: var(--accent); font-size: 11px; cursor: pointer; margin-top: 6px;">+ Add Factor</button>
+        </div>
+
+        <p style="font-size:10px; color:var(--muted); margin-top:8px; line-height:1.5">
+          Common factors: MKT (SPY), SEMI (SMH), VOL (VXX), RATES (TLT), TECH (QQQ), ENERGY (XLE), FIN (XLF). Betas are estimated from historical data.
+        </p>
+      </div>
+
+      <!-- Historical Factor Stress Test Content -->
+      <div id="historicalStressContent" style="display: none;">
+        <label>Historical Episode Presets</label>
+        <select id="stress_scenario_historical">
+          <option value="custom">Custom Period</option>
+          <option value="covid_crash">COVID-19 Crash (Feb-Mar 2020)</option>
+          <option value="tech_selloff_2022">Tech Selloff 2022</option>
+          <option value="financial_crisis">Financial Crisis 2008</option>
+          <option value="dotcom_burst">Dot-com Burst 2000-2001</option>
+        </select>
+
+        <label>Historical Stress Period</label>
+        <div class="input-row">
+          <div>
+            <label>Start Date</label>
+            <input id="stress_start_date" type="date" value="2020-02-19">
+          </div>
+          <div>
+            <label>End Date</label>
+            <input id="stress_end_date" type="date" value="2020-03-23">
+          </div>
+        </div>
+
+        <label>Beta Estimation Period</label>
+        <div class="input-row">
+          <div>
+            <label>From Year</label>
+            <input id="hist_beta_start_year" type="number" value="2021" min="2000" max="2030">
+          </div>
+          <div>
+            <label>To Year</label>
+            <input id="hist_beta_end_year" type="number" value="2024" min="2000" max="2030">
+          </div>
+        </div>
+
+        <label>Factors to Analyze</label>
+        <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+          <div style="display: grid; grid-template-columns: 120px 80px 30px; gap: 8px; margin-bottom: 8px; font-size: 10px; color: var(--muted); text-transform: uppercase;">
+            <div>Factor Name</div>
+            <div>Proxy</div>
+            <div></div>
+          </div>
+          <div id="historicalFactorsContainer">
+            <!-- Default factors -->
+            <div class="historical-factor-row" style="display: grid; grid-template-columns: 120px 80px 30px; gap: 8px; margin-bottom: 6px;">
+              <input type="text" value="MKT" placeholder="e.g., MKT" style="font-size: 11px; padding: 6px 8px;">
+              <input type="text" value="SPY" placeholder="SPY" style="font-size: 11px; padding: 6px 8px;">
+              <button onclick="removeHistoricalFactorRow(this)" style="background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; border-radius: 4px; font-size: 12px; padding: 0;">×</button>
+            </div>
+            <div class="historical-factor-row" style="display: grid; grid-template-columns: 120px 80px 30px; gap: 8px; margin-bottom: 6px;">
+              <input type="text" value="SEMI" placeholder="e.g., SEMI" style="font-size: 11px; padding: 6px 8px;">
+              <input type="text" value="SMH" placeholder="SMH" style="font-size: 11px; padding: 6px 8px;">
+              <button onclick="removeHistoricalFactorRow(this)" style="background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; border-radius: 4px; font-size: 12px; padding: 0;">×</button>
+            </div>
+          </div>
+          <button onclick="addHistoricalFactorRow()" style="width: 100%; padding: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; color: var(--accent); font-size: 11px; cursor: pointer; margin-top: 6px;">+ Add Factor</button>
+        </div>
+
+        <p style="font-size:10px; color:var(--muted); margin-top:8px; line-height:1.5">
+          This replays actual historical factor moves over the selected period. Betas are estimated from a separate estimation window. Chart shows portfolio value evolution during the crisis.
+        </p>
+      </div>
+
+
+    </div>
+
+    <!-- Simulations -->
+    <div class="panel">
+      <div class="panel-title">Simulations</div>
+      <div class="sim-grid" id="simGrid">
+
+        <label class="sim-card" id="card_historical_var">
+          <input type="checkbox" value="historical_var">
+          <div class="sim-icon">📊</div>
+          <div class="sim-name">Historical VaR</div>
+        </label>
+
+        <label class="sim-card" id="card_parametric_var">
+          <input type="checkbox" value="parametric_var">
+          <div class="sim-icon">📐</div>
+          <div class="sim-name">Parametric VaR<br>(Normal + t)</div>
+        </label>
+
+        <label class="sim-card" id="card_mc_gaussian">
+          <input type="checkbox" value="mc_gaussian">
+          <div class="sim-icon">🎲</div>
+          <div class="sim-name">MC Gaussian</div>
+        </label>
+
+        <label class="sim-card" id="card_mc_student">
+          <input type="checkbox" value="mc_student">
+          <div class="sim-icon">📈</div>
+          <div class="sim-name">MC Student-t</div>
+        </label>
+
+        <label class="sim-card" id="card_mc_copula">
+          <input type="checkbox" value="mc_copula">
+          <div class="sim-icon">🔗</div>
+          <div class="sim-name">MC Copula</div>
+        </label>
+
+        <label class="sim-card" id="card_stress_pure">
+          <input type="checkbox" value="stress_pure">
+          <div class="sim-icon">💥</div>
+          <div class="sim-name">Stress Test<br>(Pure)</div>
+        </label>
+
+        <label class="sim-card" id="card_stress_factor">
+          <input type="checkbox" value="stress_factor">
+          <div class="sim-icon">⚡</div>
+          <div class="sim-name">Stress Test<br>(Factor)</div>
+        </label>
+
+        <label class="sim-card" id="card_stress_factor_historical">
+          <input type="checkbox" value="stress_factor_historical">
+          <div class="sim-icon">🔍</div>
+          <div class="sim-name">Historical<br>Stress Test</div>
+        </label>
+
+      </div>
+    </div>
+
+    <button class="btn-run" id="btnRun" onclick="runSelected()">
+      ▶ RUN ANALYSIS
+    </button>
+
+  </aside>
+
+  <!-- ─── Main ────────────────────────────────────────── -->
+  <main id="mainPanel">
+
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">⬡</div>
+      <h2>No results yet</h2>
+      <p>Configure your portfolio and parameters, select one or more simulations, then click RUN ANALYSIS.</p>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loadingText">Fetching market data…</div>
+    </div>
+
+    <div class="results-container" id="resultsContainer" style="display:none"></div>
+
+  </main>
+</div>
+
+<script>
+// ─── Sim card toggle ──────────────────────────────────────────────────────────
+document.querySelectorAll('.sim-card').forEach(card => {
+  const cb = card.querySelector('input[type=checkbox]');
+  card.addEventListener('click', () => {
+    // toggled by label naturally; just sync visual
+    setTimeout(() => card.classList.toggle('checked', cb.checked), 0);
+  });
+});
+
+function getCheckedSims() {
+  return [...document.querySelectorAll('.sim-card input:checked')].map(cb => cb.value);
+}
+
+
+document.getElementById('hist_var_preset').addEventListener('change', function() {
+  const today = new Date();
+  const endStr = today.toISOString().split('T')[0];
+  const endInput  = document.getElementById('hist_var_end');
+  const startInput = document.getElementById('hist_var_start');
+
+  endInput.value = endStr;
+
+  const yearsMap = { '1y': 1, '2y': 2, '3y': 3, '5y': 5, '10y': 10 };
+  if (this.value in yearsMap) {
+    const start = new Date(today);
+    start.setFullYear(start.getFullYear() - yearsMap[this.value]);
+    startInput.value = start.toISOString().split('T')[0];
+  }
+});
+
+
+
+function updatePanelVisibility() {
+  const checkedSims = getCheckedSims();
+
+  // ── Historical VaR panel ──────────────────────────────────
+  const histVarPanel = document.getElementById('historicalVarPanel');
+  histVarPanel.style.display = checkedSims.includes('historical_var') ? 'block' : 'none';
+
+  // ── Stress test panel ─────────────────────────────────────
+  const stressTestPanel = document.getElementById('stressTestPanel');
+  const pureContent     = document.getElementById('pureStressContent');
+  const factorContent   = document.getElementById('factorStressContent');
+  const historicalContent = document.getElementById('historicalStressContent');
+
+  const hasPure       = checkedSims.includes('stress_pure');
+  const hasFactor     = checkedSims.includes('stress_factor');
+  const hasHistorical = checkedSims.includes('stress_factor_historical');
+
+  if (hasPure || hasFactor || hasHistorical) {
+    stressTestPanel.style.display = 'block';
+    pureContent.style.display       = hasPure       ? 'block' : 'none';
+    factorContent.style.display     = hasFactor     ? 'block' : 'none';
+    historicalContent.style.display = hasHistorical ? 'block' : 'none';
+  } else {
+    stressTestPanel.style.display = 'none';
+  }
+}
+
+// Update visibility when any checkbox changes
+document.querySelectorAll('.sim-card').forEach(card => {
+  const cb = card.querySelector('input[type=checkbox]');
+  card.addEventListener('click', () => {
+    setTimeout(() => {
+      card.classList.toggle('checked', cb.checked);
+      updatePanelVisibility();
+    }, 0);
+  });
+});
+
+// ─── Pure Stress Test: Dynamic Ticker Table ────────────────────────────────
+function addPureRow() {
+  const container = document.getElementById('pureShocksContainer');
+  const row = document.createElement('div');
+  row.className = 'pure-shock-row';
+  row.style.cssText = 'display: grid; grid-template-columns: 1fr 100px 30px; gap: 8px; margin-bottom: 6px;';
+  row.innerHTML = `
+    <input type="text" placeholder="e.g., NVDA" style="font-size: 11px; padding: 6px 8px;">
+    <input type="number" placeholder="-25" step="1" style="font-size: 11px; padding: 6px 8px;">
+    <button onclick="removePureRow(this)" style="background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; border-radius: 4px; font-size: 12px; padding: 0;">×</button>
+  `;
+  container.appendChild(row);
+}
+
+function removePureRow(btn) {
+  const container = document.getElementById('pureShocksContainer');
+  if (container.children.length > 1) {
+    btn.parentElement.remove();
+  } else {
+    alert('Must have at least one ticker row');
+  }
+}
+
+function getPureShocks() {
+  const rows = document.querySelectorAll('.pure-shock-row');
+  const shocks = {};
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const ticker = inputs[0].value.trim().toUpperCase();
+    const shock = inputs[1].value.trim();
+    if (ticker && shock) {
+      shocks[ticker] = parseFloat(shock);
+    }
+  });
+  return shocks;
+}
+
+function setPureShocks(shocksObj) {
+  const container = document.getElementById('pureShocksContainer');
+  container.innerHTML = '';
+  
+  const tickers = Object.keys(shocksObj);
+  if (tickers.length === 0) {
+    addPureRow();
+    return;
+  }
+  
+  tickers.forEach(ticker => {
+    const row = document.createElement('div');
+    row.className = 'pure-shock-row';
+    row.style.cssText = 'display: grid; grid-template-columns: 1fr 100px 30px; gap: 8px; margin-bottom: 6px;';
+    row.innerHTML = `
+      <input type="text" value="${ticker}" style="font-size: 11px; padding: 6px 8px;">
+      <input type="number" value="${shocksObj[ticker]}" step="1" style="font-size: 11px; padding: 6px 8px;">
+      <button onclick="removePureRow(this)" style="background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; border-radius: 4px; font-size: 12px; padding: 0;">×</button>
+    `;
+    container.appendChild(row);
+  });
+}
+
+// Pure stress presets
+document.getElementById('stress_scenario_pure').addEventListener('change', function() {
+  const scenario = this.value;
+  const defaultShockInput = document.getElementById('default_shock');
+  
+  switch(scenario) {
+    case 'covid_crash':
+      defaultShockInput.value = '-35';
+      setPureShocks({
+        'SPY': -34,
+        'QQQ': -28,
+        'NVDA': -40,
+        'AAPL': -30,
+        'MSFT': -32,
+      });
+      break;
+    case 'tech_selloff_2022':
+      defaultShockInput.value = '-20';
+      setPureShocks({
+        'NVDA': -50,
+        'AAPL': -35,
+        'MSFT': -38,
+        'GOOGL': -40,
+        'META': -45,
+      });
+      break;
+    case 'bank_crisis_2023':
+      defaultShockInput.value = '-10';
+      setPureShocks({
+        'JPM': -35,
+        'BAC': -40,
+        'WFC': -38,
+        'C': -42,
+      });
+      break;
+    case 'market_correction':
+      defaultShockInput.value = '-15';
+      setPureShocks({
+        'SPY': -15,
+        'QQQ': -15,
+      });
+      break;
+    case 'custom':
+    default:
+      defaultShockInput.value = '-15';
+      setPureShocks({});
+      addPureRow();
+      break;
+  }
+});
+
+// ─── Factor Stress Test: Dynamic Factor Table ────────────────────────────────
+function addFactorRow() {
+  const container = document.getElementById('factorShocksContainer');
+  const row = document.createElement('div');
+  row.className = 'factor-shock-row';
+  row.style.cssText = 'display: grid; grid-template-columns: 120px 80px 100px 30px; gap: 8px; margin-bottom: 6px;';
+  row.innerHTML = `
+    <input type="text" placeholder="e.g., MKT" style="font-size: 11px; padding: 6px 8px;">
+    <input type="text" placeholder="SPY" style="font-size: 11px; padding: 6px 8px;">
+    <input type="number" placeholder="-20" step="1" style="font-size: 11px; padding: 6px 8px;">
+    <button onclick="removeFactorRow(this)" style="background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; border-radius: 4px; font-size: 12px; padding: 0;">×</button>
+  `;
+  container.appendChild(row);
+}
+
+function removeFactorRow(btn) {
+  const container = document.getElementById('factorShocksContainer');
+  if (container.children.length > 1) {
+    btn.parentElement.remove();
+  } else {
+    alert('Must have at least one factor row');
+  }
+}
+
+function getFactorShocks() {
+  const rows = document.querySelectorAll('.factor-shock-row');
+  const factors = {};
+  const shocks = {};
+  
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const factorName = inputs[0].value.trim().toUpperCase();
+    const proxy = inputs[1].value.trim().toUpperCase();
+    const shock = inputs[2].value.trim();
+    
+    if (factorName && proxy && shock) {
+      factors[factorName] = proxy;
+      shocks[factorName] = parseFloat(shock);
+    }
+  });
+  
+  return { factors, shocks };
+}
+
+function setFactorShocks(factorsObj, shocksObj) {
+  const container = document.getElementById('factorShocksContainer');
+  container.innerHTML = '';
+  
+  const factorNames = Object.keys(factorsObj);
+  if (factorNames.length === 0) {
+    addFactorRow();
+    return;
+  }
+  
+  factorNames.forEach(factorName => {
+    const row = document.createElement('div');
+    row.className = 'factor-shock-row';
+    row.style.cssText = 'display: grid; grid-template-columns: 120px 80px 100px 30px; gap: 8px; margin-bottom: 6px;';
+    row.innerHTML = `
+      <input type="text" value="${factorName}" style="font-size: 11px; padding: 6px 8px;">
+      <input type="text" value="${factorsObj[factorName]}" style="font-size: 11px; padding: 6px 8px;">
+      <input type="number" value="${shocksObj[factorName] || 0}" step="1" style="font-size: 11px; padding: 6px 8px;">
+      <button onclick="removeFactorRow(this)" style="background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; border-radius: 4px; font-size: 12px; padding: 0;">×</button>
+    `;
+    container.appendChild(row);
+  });
+}
+
+// Factor stress presets
+document.getElementById('stress_scenario_factor').addEventListener('change', function() {
+  const scenario = this.value;
+  
+  switch(scenario) {
+    case 'covid_crash':
+      setFactorShocks(
+        { 'MKT': 'SPY', 'SEMI': 'SMH', 'VOL': 'VXX', 'RATES': 'TLT' },
+        { 'MKT': -34, 'SEMI': -28, 'VOL': 60, 'RATES': -15 }
+      );
+      break;
+    case 'growth_selloff':
+      setFactorShocks(
+        { 'MKT': 'SPY', 'SEMI': 'SMH', 'TECH': 'QQQ' },
+        { 'MKT': -15, 'SEMI': -35, 'TECH': -25 }
+      );
+      break;
+    case 'rates_spike':
+      setFactorShocks(
+        { 'MKT': 'SPY', 'RATES': 'TLT', 'FIN': 'XLF' },
+        { 'MKT': -10, 'RATES': -20, 'FIN': 15 }
+      );
+      break;
+    case 'volatility_shock':
+      setFactorShocks(
+        { 'MKT': 'SPY', 'VOL': 'VXX' },
+        { 'MKT': -25, 'VOL': 80 }
+      );
+      break;
+    case 'custom':
+    default:
+      setFactorShocks(
+        { 'MKT': 'SPY', 'SEMI': 'SMH' },
+        { 'MKT': -20, 'SEMI': -25 }
+      );
+      break;
+  }
+});
+
+// ─── Historical Factor Stress Test: Dynamic Factor Table ─────────────────────
+function addHistoricalFactorRow() {
+  const container = document.getElementById('historicalFactorsContainer');
+  const row = document.createElement('div');
+  row.className = 'historical-factor-row';
+  row.style.cssText = 'display: grid; grid-template-columns: 120px 80px 30px; gap: 8px; margin-bottom: 6px;';
+  row.innerHTML = `
+    <input type="text" placeholder="e.g., MKT" style="font-size: 11px; padding: 6px 8px;">
+    <input type="text" placeholder="SPY" style="font-size: 11px; padding: 6px 8px;">
+    <button onclick="removeHistoricalFactorRow(this)" style="background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; border-radius: 4px; font-size: 12px; padding: 0;">×</button>
+  `;
+  container.appendChild(row);
+}
+
+function removeHistoricalFactorRow(btn) {
+  const container = document.getElementById('historicalFactorsContainer');
+  if (container.children.length > 1) {
+    btn.parentElement.remove();
+  } else {
+    alert('Must have at least one factor');
+  }
+}
+
+function getHistoricalFactors() {
+  const rows = document.querySelectorAll('.historical-factor-row');
+  const factors = {};
+  
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const factorName = inputs[0].value.trim().toUpperCase();
+    const proxy = inputs[1].value.trim().toUpperCase();
+    
+    if (factorName && proxy) {
+      factors[factorName] = proxy;
+    }
+  });
+  
+  return factors;
+}
+
+function setHistoricalFactors(factorsObj) {
+  const container = document.getElementById('historicalFactorsContainer');
+  container.innerHTML = '';
+  
+  const factorNames = Object.keys(factorsObj);
+  if (factorNames.length === 0) {
+    addHistoricalFactorRow();
+    return;
+  }
+  
+  factorNames.forEach(factorName => {
+    const row = document.createElement('div');
+    row.className = 'historical-factor-row';
+    row.style.cssText = 'display: grid; grid-template-columns: 120px 80px 30px; gap: 8px; margin-bottom: 6px;';
+    row.innerHTML = `
+      <input type="text" value="${factorName}" style="font-size: 11px; padding: 6px 8px;">
+      <input type="text" value="${factorsObj[factorName]}" style="font-size: 11px; padding: 6px 8px;">
+      <button onclick="removeHistoricalFactorRow(this)" style="background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; border-radius: 4px; font-size: 12px; padding: 0;">×</button>
+    `;
+    container.appendChild(row);
+  });
+}
+
+// Historical stress presets
+document.getElementById('stress_scenario_historical').addEventListener('change', function() {
+  const scenario = this.value;
+  const startInput = document.getElementById('stress_start_date');
+  const endInput = document.getElementById('stress_end_date');
+  
+  switch(scenario) {
+    case 'covid_crash':
+      startInput.value = '2020-02-19';
+      endInput.value = '2020-03-23';
+      setHistoricalFactors({ 'MKT': 'SPY', 'SEMI': 'SMH', 'VOL': 'VXX', 'RATES': 'TLT' });
+      break;
+    case 'tech_selloff_2022':
+      startInput.value = '2022-01-03';
+      endInput.value = '2022-10-12';
+      setHistoricalFactors({ 'MKT': 'SPY', 'SEMI': 'SMH', 'TECH': 'QQQ', 'RATES': 'TLT' });
+      break;
+    case 'financial_crisis':
+      startInput.value = '2008-09-01';
+      endInput.value = '2009-03-09';
+      setHistoricalFactors({ 'MKT': 'SPY', 'FIN': 'XLF', 'RATES': 'TLT' });
+      break;
+    case 'dotcom_burst':
+      startInput.value = '2000-03-10';
+      endInput.value = '2001-09-21';
+      setHistoricalFactors({ 'MKT': 'SPY', 'TECH': 'QQQ' });
+      break;
+    case 'custom':
+    default:
+      startInput.value = '2020-02-19';
+      endInput.value = '2020-03-23';
+      setHistoricalFactors({ 'MKT': 'SPY', 'SEMI': 'SMH' });
+      break;
+  }
+});
+
+
+
+// ─── Loading messages cycling ─────────────────────────────────────────────────
+const loadMsgs = [
+  'Fetching market data…',
+  'Downloading price history…',
+  'Computing portfolio returns…',
+  'Running simulations…',
+  'Fitting distributions…',
+  'Rendering charts…',
+];
+let loadInterval = null;
+
+function startLoading() {
+  let i = 0;
+  const el = document.getElementById('loadingText');
+  el.textContent = loadMsgs[0];
+  loadInterval = setInterval(() => {
+    i = (i + 1) % loadMsgs.length;
+    el.textContent = loadMsgs[i];
+  }, 2200);
+}
+
+function stopLoading() {
+  if (loadInterval) { clearInterval(loadInterval); loadInterval = null; }
+}
+
+// ─── Status indicator ─────────────────────────────────────────────────────────
+function setStatus(text, color) {
+  const el = document.getElementById('statusText');
+  el.textContent = text;
+  el.style.color = color || '';
+  const dot = document.querySelector('.status-dot');
+  dot.style.background = color || 'var(--green)';
+  dot.style.boxShadow = color ? `0 0 6px ${color}` : '0 0 6px var(--green)';
+}
+
+// ─── Main run logic ───────────────────────────────────────────────────────────
+async function runSelected() {
+  const sims = getCheckedSims();
+  if (!sims.length) {
+    alert('Please select at least one simulation.');
+    return;
+  }
+
+  const tickers = document.getElementById('tickers').value.trim();
+  const weights = document.getElementById('weights').value.trim();
+
+  if (!tickers || !weights) {
+    alert('Please fill in tickers and weights.');
+    return;
+  }
+
+  // UI: show loader
+  const btn = document.getElementById('btnRun');
+  btn.disabled = true;
+  btn.textContent = '⟳ RUNNING…';
+
+  document.getElementById('emptyState').style.display = 'none';
+  const loader = document.getElementById('loadingOverlay');
+  loader.style.display = 'flex';
+
+  // CLEAR previous results and show empty container immediately
+  const resultsContainer = document.getElementById('resultsContainer');
+  resultsContainer.innerHTML = '';
+  resultsContainer.style.display = 'flex';
+
+  setStatus('RUNNING', '#f59e0b');
+  startLoading();
+
+  const payload = {
+    tickers:          tickers,
+    weights:          weights,
+    confidence:       document.getElementById('confidence').value,
+    horizon:          document.getElementById('horizon').value,
+    start_year:       document.getElementById('start_year').value,
+    end_year:         document.getElementById('end_year').value,
+    portfolio_value:  document.getElementById('portfolio_value').value,
+    n_sims:           document.getElementById('n_sims').value,
+    hist_var_start:   document.getElementById('hist_var_start').value,
+    hist_var_end:     document.getElementById('hist_var_end').value,
+    default_shock:    document.getElementById('default_shock').value,
+    pure_shocks:      JSON.stringify(getPureShocks()),
+    beta_start_year:  document.getElementById('beta_start_year').value,
+    beta_end_year:    document.getElementById('beta_end_year').value,
+    factor_config:    JSON.stringify(getFactorShocks()),
+    stress_start_date: document.getElementById('stress_start_date').value,
+    stress_end_date:   document.getElementById('stress_end_date').value,
+    hist_beta_start_year: document.getElementById('hist_beta_start_year').value,
+    hist_beta_end_year:   document.getElementById('hist_beta_end_year').value,
+    historical_factors:   JSON.stringify(getHistoricalFactors()),
+  };
+
+  // Run each simulation sequentially and render IMMEDIATELY as it arrives
+  for (const sim of sims) {
+    try {
+      document.getElementById('loadingText').textContent = `Running: ${simLabel(sim)}…`;
+      
+      const resp = await fetch('/api/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, simulation: sim }),
+      });
+      const data = await resp.json();
+      
+      // Render this single result immediately
+      renderSingleResult(sim, data);
+      
+    } catch (err) {
+      // Render error immediately
+      renderSingleResult(sim, { success: false, error: err.toString() });
+    }
+  }
+
+  // All done
+  stopLoading();
+  loader.style.display = 'none';
+  btn.disabled = false;
+  btn.textContent = '▶ RUN ANALYSIS';
+  setStatus('READY', 'var(--green)');
+}
+
+function simLabel(sim) {
+  const map = {
+    historical_var:           'Historical VaR',
+    parametric_var:           'Parametric VaR',
+    mc_gaussian:              'MC Gaussian',
+    mc_student:               'MC Student-t',
+    mc_copula:                'MC Copula',
+    stress_pure:              'Pure Stress Test',
+    stress_factor:            'Factor Stress Test',
+    stress_factor_historical: 'Historical Stress Test',
+  };
+  return map[sim] || sim;
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function renderResults(results) {
+  const container = document.getElementById('resultsContainer');
+  container.innerHTML = '';
+  container.style.display = 'flex';
+
+  for (const { sim, data } of results) {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+
+    if (!data.success) {
+      card.innerHTML = `
+        <div class="result-header">
+          <span class="result-title">${simLabel(sim)}</span>
+        </div>
+        <div style="padding:16px">
+          <div class="error-card">
+            <strong>⚠ Error</strong>
+            ${escHtml(data.error)}
+            ${data.traceback
+              ? `<details style="margin-top:10px"><summary style="cursor:pointer;color:var(--muted)">Traceback</summary>
+                 <pre style="margin-top:6px;font-size:10px;white-space:pre-wrap;color:#fca5a5">${escHtml(data.traceback)}</pre></details>`
+              : ''}
+          </div>
+        </div>`;
+    } else {
+      const tableHtml = buildTable(data.table);
+      const chartHtml = data.chart
+        ? `<img src="data:image/png;base64,${data.chart}" alt="chart">`
+        : '<p style="color:var(--muted);font-size:12px;padding:20px">No chart returned.</p>';
+
+      card.innerHTML = `
+        <div class="result-header">
+          <span class="result-title">${escHtml(data.title || simLabel(sim))}</span>
+          <div class="headline-var">
+            <div class="amount">${escHtml(data.headline_var || '–')}</div>
+            <div class="label">${escHtml(data.headline_label || '')}</div>
+          </div>
+        </div>
+        <div class="result-body">
+          <div class="result-chart">${chartHtml}</div>
+          <div class="result-table-wrap">${tableHtml}</div>
+        </div>`;
+    }
+
+    container.appendChild(card);
+  }
+}
+
+// Render a single result and append it to the container
+function renderSingleResult(sim, data) {
+  const container = document.getElementById('resultsContainer');
+  const card = document.createElement('div');
+  card.className = 'result-card';
+  card.style.animation = 'fadeUp 0.4s ease both';  // animate entrance
+
+  if (!data.success) {
+    card.innerHTML = `
+      <div class="result-header">
+        <span class="result-title">${simLabel(sim)}</span>
+      </div>
+      <div style="padding:16px">
+        <div class="error-card">
+          <strong>⚠ Error</strong>
+          ${escHtml(data.error)}
+          ${data.traceback
+            ? `<details style="margin-top:10px"><summary style="cursor:pointer;color:var(--muted)">Traceback</summary>
+               <pre style="margin-top:6px;font-size:10px;white-space:pre-wrap;color:#fca5a5">${escHtml(data.traceback)}</pre></details>`
+            : ''}
+        </div>
+      </div>`;
+  } else {
+    const tableHtml = buildTable(data.table);
+    const chartHtml = data.chart
+      ? `<img src="data:image/png;base64,${data.chart}" alt="chart">`
+      : '<p style="color:var(--muted);font-size:12px;padding:20px">No chart returned.</p>';
+
+    card.innerHTML = `
+      <div class="result-header">
+        <span class="result-title">${escHtml(data.title || simLabel(sim))}</span>
+        <div class="headline-var">
+          <div class="amount">${escHtml(data.headline_var || '–')}</div>
+          <div class="label">${escHtml(data.headline_label || '')}</div>
+        </div>
+      </div>
+      <div class="result-body">
+        <div class="result-chart">${chartHtml}</div>
+        <div class="result-table-wrap">${tableHtml}</div>
+      </div>`;
+  }
+
+  container.appendChild(card);
+}
+
+
+function buildTable(rows) {
+  if (!rows || !rows.length) return '<p style="color:var(--muted);font-size:12px">No data.</p>';
+  const keys = Object.keys(rows[0]);
+  const head = keys.map(k => `<th>${escHtml(k)}</th>`).join('');
+  const body = rows.map(row =>
+    `<tr>${keys.map(k => `<td>${escHtml(String(row[k] ?? ''))}</td>`).join('')}</tr>`
+  ).join('');
+  return `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>
