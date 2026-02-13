@@ -14,7 +14,7 @@ from flask import Flask, render_template, request, jsonify
 
 # ── Path setup ─────────────────────────────────────────────────────────────────
 # Adjust this to point at your actual Market_Risk_spglobal folder
-LIBRARY_ROOT = Path(r"C:\Users\franc\Downloads\VSC\AdSynthAI\Market_Risk_spglobal")
+LIBRARY_ROOT = Path(r"C:\Users\franc\Downloads\VSC\Portfolio_Analytics_Engine\Market_Risk_spglobal")
 sys.path.insert(0, str(LIBRARY_ROOT))
 sys.path.insert(0, str(LIBRARY_ROOT / "Monte_Carlo VaR"))
 sys.path.insert(0, str(LIBRARY_ROOT / "Stress_Testing"))

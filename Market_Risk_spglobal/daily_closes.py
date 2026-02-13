@@ -1,3 +1,5 @@
+import os
+print("RUNNING FILE:", os.path.abspath(__file__))
 import datetime as dt
 import yfinance as yf
 import pandas as pd
@@ -62,7 +64,7 @@ if __name__ == "__main__":
         print("\n--- Success! Data Received ---")
         print(df_closes.tail())
 
-        out_file = Path(r"C:\Users\franc\Downloads\VSC\AdSynthAI\Market_Risk_spglobal\daily_adjusted_closes.csv")
+        out_file = Path(r"C:\Users\franc\Downloads\VSC\Portfolio_Analytics_Engine\Market_Risk_spglobal\daily_adjusted_closes.csv")
 
         # Avoid PermissionError if file is open (Excel lock): write a timestamped fallback
         try:
