@@ -63,10 +63,24 @@ You provide a portfolio (tickers + weights), and the app fetches data and runs t
 
 ---
 
+## Screenshots
+
+### Parametric + Historical VaR
+![Parametric + Historical VaR](images/Parametric + Historical VaR.png)
+
+### Student-t + Copula Monte Carlo VaR (1Y Horizon)
+![Student + Copula MC VaR 1y](images/Student + Copula MC VaR 1y.png)
+
+### Historical + Factor Stress Test
+![Historical + Factor Stress Test](images/Historical + Factor Stress Test.png)
+
+---
+
 ## Local Web App (Flask)
 
 A Flask-powered local website that wraps the `Market_Risk_spglobal` Python library and lets you run the analytics from a browser.
 
+---
 
 ## Setup
 
@@ -74,34 +88,3 @@ A Flask-powered local website that wraps the `Market_Risk_spglobal` Python libra
 
 ```bash
 pip install flask yfinance pandas numpy matplotlib certifi mpmath
-Or:
-
-pip install -r market_risk_app/requirements.txt
-Run the app
-cd market_risk_app
-python app.py
-Open: http://127.0.0.1:5000
-
-Using the interface
-Portfolio: enter comma-separated tickers and matching weights (weights should sum to 1)
-
-Parameters: choose confidence level, time horizon, history window, MC simulations
-
-Simulations: toggle one or more modules to run
-
-Run analysis: fetches live data and runs selected models
-
-Outputs include plots (distributions/scenarios) and results tables, including component-level P&L breakdowns where applicable.
-
-Developer notes (wrappers)
-The web app expects callable run_* wrappers in the analytics scripts (e.g., run_bin_t_student_var()), returning results tables and matplotlib figures for embedding in the UI. Add wrappers to any scripts that do not yet expose a run_* entry point.
-
-Troubleshooting
-Problem	Fix
-ModuleNotFoundError	Confirm LIBRARY_ROOT and folder layout.
-SSL errors	Ensure cert handling in set_certifi.py / daily_closes.py.
-ImportError: cannot import name run_*	Add a run_* wrapper to the referenced script.
-Port 5000 already in use	Change the port in app.py (e.g., 5001).
-Blank chart	Ensure the script returns a valid matplotlib Figure.
-Disclaimer
-Educational prototype built during a short placement project. Outputs are for demonstration/learning only and are not intended for production risk management or investment decisions.
