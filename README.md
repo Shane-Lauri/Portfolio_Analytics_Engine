@@ -67,42 +67,6 @@ You provide a portfolio (tickers + weights), and the app fetches data and runs t
 
 A Flask-powered local website that wraps the `Market_Risk_spglobal` Python library and lets you run the analytics from a browser.
 
----
-
-## Folder Structure
-
-Place `market_risk_app/` **next to** (i.e. as a sibling of) `Market_Risk_spglobal/`:
-
-Portfolio_Analytics_Engine
-│
-├── Market_Risk_spglobal\ ← Python analytics library
-│ ├── bin_t_stu_var.py
-│ ├── daily_closes.py
-│ ├── historical_var.py
-│ ├── set_certifi.py
-│ ├── Monte_Carlo VaR
-│ │ ├── mc_var_copula.py
-│ │ ├── mc_var_gaussian.py
-│ │ └── mc_var_student.py
-│ └── Stress_Testing
-│ ├── factor_historical_stress_test.py
-│ ├── factor_stress_test.py
-│ └── stress_test_pure.py
-│
-└── market_risk_app\ ← Flask web app
-├── app.py
-├── requirements.txt
-└── templates
-└── index.html
-
-
-> **Important:** `app.py` auto-detects the library path as `../Market_Risk_spglobal`.  
-> If your folders differ, edit `LIBRARY_ROOT` near the top of `app.py`:
-> ```python
-> LIBRARY_ROOT = Path(r"C:\path\to\Market_Risk_spglobal")
-> ```
-
----
 
 ## Setup
 
